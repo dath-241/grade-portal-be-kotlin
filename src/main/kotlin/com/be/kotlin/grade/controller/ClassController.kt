@@ -37,7 +37,7 @@ class ClassController(private val classService: ClassImplement) {
         return ResponseEntity.status(response.statusCode).body(response)
     }
 
-    @GetMapping("/all")
+    @GetMapping()
     fun getAllClasses(
         @RequestParam(defaultValue = "0") page: Int, // Giá trị mặc định là 0
         @RequestParam(defaultValue = "3") size: Int // Giá trị mặc định là 10
@@ -46,13 +46,12 @@ class ClassController(private val classService: ClassImplement) {
         return ResponseEntity.status(response.statusCode).body(response)
     }
 
-    @GetMapping("/all/{id}")
+    @GetMapping("/all")
     fun getAllMyClasses(
         @RequestParam(defaultValue = "0") page: Int, // Giá trị mặc định là 0
-        @RequestParam(defaultValue = "3") size: Int, // Giá trị mặc định là 10
-        @PathVariable id: Long,
+        @RequestParam(defaultValue = "3") size: Int, // Giá trị mặc định là 3
     ): ResponseEntity<Response> {
-        val response = classService.getAllMyClasses(page, size, id)
+        val response = classService.getAllMyClasses(page, size)
         return ResponseEntity.status(response.statusCode).body(response)
     }
 }

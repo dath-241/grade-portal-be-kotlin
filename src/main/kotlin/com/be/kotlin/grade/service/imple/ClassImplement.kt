@@ -1,5 +1,6 @@
 package com.be.kotlin.grade.service.imple
 
+import com.be.kotlin.grade.controller.UserController
 import com.be.kotlin.grade.dto.Response
 import com.be.kotlin.grade.dto.StudentDTO.StudentResponseDto
 import com.be.kotlin.grade.dto.classDTO.ClassDTO
@@ -7,14 +8,11 @@ import com.be.kotlin.grade.exception.AppException
 import com.be.kotlin.grade.exception.ErrorCode
 import com.be.kotlin.grade.mapper.ClassMapper
 import com.be.kotlin.grade.mapper.StudentMapper
-import com.be.kotlin.grade.repository.ClassRepository
-import com.be.kotlin.grade.repository.StudyRepository
-import com.be.kotlin.grade.repository.SubjectRepository
-import com.be.kotlin.grade.repository.UserRepository
+import com.be.kotlin.grade.mapper.UserMapper
+import com.be.kotlin.grade.repository.*
 import com.be.kotlin.grade.service.interf.ClassInterface
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
-import org.springframework.data.web.config.PageableHandlerMethodArgumentResolverCustomizer
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 
@@ -25,7 +23,10 @@ class ClassImplement(
     private val userRepository: UserRepository,
     private val classMapper: ClassMapper,
     private val studyRepository: StudyRepository,
-    private val studentMapper: StudentMapper
+    private val studentMapper: StudentMapper,
+    private val studentRepository: StudentRepository,
+    private val userMapper: UserMapper,
+    private val user: UserController
 ) : ClassInterface {
 
     override fun addClass(classDTO: ClassDTO): Response {
@@ -129,7 +130,27 @@ class ClassImplement(
         )
     }
 
-    override fun getAllMyClasses(page: Int, size: Int, studentId: Long): Response {
+    override fun getAllMyClasses(page: Int, size: Int): Response {
+        val context = SecurityContextHolder.getContext()
+        val username = context.authentication?.name
+
+        val user = username?.let {
+            userRepository.findByUsername(it).orElseThrow {
+                RuntimeException("User not found for username: $it")
+            }
+        } ?: throw RuntimeException("No username found in SecurityContext")
+
+        val student = userMapper.toUserDTO(user)
+
+        // Lấy Student từ studentRepository và trích xuất ID
+        val studentEntity = student.id?.let {
+            studentRepository.findById(it).orElseThrow {
+                RuntimeException("Student not found for ID: $it")
+            }
+        } ?: throw RuntimeException("Invalid student ID")
+
+        val studentId = studentEntity.studentId
+
         val classIds = studyRepository.findClassIdsByStudentId(studentId)
 
         if (classIds.isEmpty()) {

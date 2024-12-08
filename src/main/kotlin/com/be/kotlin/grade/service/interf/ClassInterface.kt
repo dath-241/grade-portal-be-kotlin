@@ -12,5 +12,5 @@ interface ClassInterface {
     fun getHighestGradeStudent(@RequestParam classId : Long) : MutableList<StudentResponseDto>
     fun getClassById(id: Long): Response
     fun getAllClasses(page: Int, size: Int): Response
-    fun getAllMyClasses(page: Int, size: Int, studentId: Long): Response
+    fun getAllMyClasses(page: Int, size: Int): Response
 }
