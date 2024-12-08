@@ -31,7 +31,7 @@ class SecurityConfig (
     fun filterChain(httpSecurity: HttpSecurity): SecurityFilterChain {
         httpSecurity.authorizeHttpRequests { request ->
             request.requestMatchers("/auth/**", "students/register").permitAll()
-                .anyRequest().permitAll()
+                .anyRequest().authenticated()
         }
 
         httpSecurity.oauth2ResourceServer { oauth2 ->
@@ -71,9 +71,9 @@ class SecurityConfig (
 
     @Bean
     fun jwtDecoder(): JwtDecoder {
-        val secretKeySpec = SecretKeySpec(signerKey.toByteArray(), "HS512")
+        val secretKeySpec = SecretKeySpec(signerKey.toByteArray(), "HS256")
         return NimbusJwtDecoder.withSecretKey(secretKeySpec)
-            .macAlgorithm(MacAlgorithm.HS512)
+            .macAlgorithm(MacAlgorithm.HS256)
             .build()
     }
 

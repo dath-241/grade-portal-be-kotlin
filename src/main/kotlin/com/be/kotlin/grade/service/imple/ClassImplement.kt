@@ -2,8 +2,8 @@ package com.be.kotlin.grade.service.imple
 
 import com.be.kotlin.grade.controller.UserController
 import com.be.kotlin.grade.dto.Response
-import com.be.kotlin.grade.dto.StudentDTO.StudentResponseDto
 import com.be.kotlin.grade.dto.classDTO.ClassDTO
+import com.be.kotlin.grade.dto.studentDTO.StudentResponseDTO
 import com.be.kotlin.grade.exception.AppException
 import com.be.kotlin.grade.exception.ErrorCode
 import com.be.kotlin.grade.mapper.ClassMapper
@@ -182,19 +182,31 @@ class ClassImplement(
         )
     }
 
-    override fun getHighestGradeStudent(classId: Long): MutableList<StudentResponseDto> {
+    override fun getHighestGradeStudent(classId: Long): Response {
         val myClass = classRepository.findById(classId).orElse(null)
         val studyList = studyRepository.findByStudyClass(myClass)
-        var maxGrade : Float = 0F
-        val res : MutableList<StudentResponseDto> = mutableListOf()
-        for(i in studyList){
-            if(i.score>=maxGrade){ maxGrade=i.score}
-        }
-        for(i in studyList){
-            if(i.score==maxGrade){
-                i.student?.let { studentMapper.toStudentResponseDto(it,maxGrade) }?.let { res.add(it) }
+        val res : MutableList<StudentResponseDTO> = mutableListOf()
+        val n = studyList.size
+        for( i in 0 until n){
+            var swapped = false
+            for( j in 0 until n-i-1){
+                if(studyList[j].score<studyList[j+1].score){
+                    val s = studyList[j]
+                    studyList[j]=studyList[j+1]
+                    studyList[j+1]=s
+                    swapped=true
+                }
             }
+            if (swapped==false) break
         }
-        return res
+        for (i in 0 until minOf(5, studyList.size)) {
+            studyList[i].student?.let { studentMapper.toStudentResponseDto(it, studyList[i].score) }?.let { res.add(it) }
+        }
+
+        return Response (
+            statusCode = 200,
+            message = "Hall of fame fetch successfully",
+            listStudentDTO = res
+        )
     }
 }
