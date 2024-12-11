@@ -43,7 +43,7 @@ class ClassController(private val classService: ClassImplement) {
     @GetMapping("/all-admin")
     fun getAllClasses(
         @RequestParam(defaultValue = "0") page: Int, // Giá trị mặc định là 0
-        @RequestParam(defaultValue = "3") size: Int // Giá trị mặc định là 10
+        @RequestParam(defaultValue = "3") size: Int // Giá trị mặc định là 3
     ): ResponseEntity<Response> {
         val response = classService.getAllClasses(page, size)
         return ResponseEntity.status(response.statusCode).body(response)
@@ -53,7 +53,7 @@ class ClassController(private val classService: ClassImplement) {
     @GetMapping("/all-student")
     fun getAllStudentClasses(
         @RequestParam(defaultValue = "0") page: Int, // Giá trị mặc định là 0
-        @RequestParam(defaultValue = "3") size: Int, // Giá trị mặc định là 10
+        @RequestParam(defaultValue = "3") size: Int // Giá trị mặc định là 3
     ): ResponseEntity<Response> {
         val response = classService.getAllStudentClasses(page, size)
         return ResponseEntity.status(response.statusCode).body(response)
