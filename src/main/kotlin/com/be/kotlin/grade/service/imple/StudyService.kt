@@ -16,6 +16,11 @@ import org.springframework.data.domain.Pageable
 import org.springframework.security.core.context.SecurityContextHolder
 
 import org.springframework.stereotype.Service
+import org.springframework.web.multipart.MultipartFile
+import java.io.InputStream
+import org.apache.poi.ss.usermodel.WorkbookFactory
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
+import okhttp3.*
 import java.io.File
 import java.util.*
 import kotlin.collections.HashMap
@@ -84,6 +89,56 @@ class StudyService(
             statusCode = 200,
             message = "Study added successfully",
             studyDTO = studyMapper.toStudyDTO(newStudy))
+    }
+
+    override fun processExcel(file: MultipartFile): Response {
+        // Chuyển file Excel thành InputStream
+        val inputStream: InputStream = file.inputStream
+
+        // Tạo Workbook từ file Excel
+        val workbook = WorkbookFactory.create(inputStream)
+
+        // Lấy sheet đầu tiên
+        val sheet = workbook.getSheetAt(0)
+
+
+        // Đọc thông tin từ dòng đầu tiên (tiêu đề)
+        val headerRow = sheet.getRow(0) ?: return Response(statusCode = 400, message = "Missing header row")
+        val headerData = headerRow.getCell(0)?.stringCellValue ?: return Response(statusCode = 400, message = "Invalid header format")
+
+        // Trích xuất mã môn học, lớp, học kỳ
+        val regex = """([A-Z0-9]+) - L(\d+) - (\d+)""".toRegex()
+        val matchResult = regex.find(headerData) ?: return Response(statusCode = 400, message = "Header format not recognized")
+        val subjectId = matchResult.groupValues[1]
+        val classId = matchResult.groupValues[2].toLong()
+        val semester = matchResult.groupValues[3].toInt()
+
+        // Lặp qua từng dòng (bỏ qua dòng đầu tiên là tiêu đề)
+        for (rowIndex in 2..sheet.lastRowNum) {
+            val row = sheet.getRow(rowIndex)
+
+            // Lấy dữ liệu từ các cột, kiểm tra null nếu cần
+            val studentId = row.getCell(0)?.numericCellValue?.toLong() ?: continue
+
+            // Tạo StudyDTO từ dữ liệu trong file Excel
+            val studyDTO = StudyDTO(
+                studentId = studentId,
+                subjectId = subjectId,
+                classId = classId,
+                semester = semester
+            )
+
+            val response = addStudyStudent(studyDTO)
+
+            if (response.statusCode != 200) {
+                return Response(statusCode = 400, message = "Error adding study for student ID: $studentId")
+            }
+        }
+
+        workbook.close()
+        inputStream.close()
+
+        return Response(statusCode = 200, message = "danh sách học sinh đã được thêm vào lớp")
     }
 
     override fun deleteStudyStudent(studyIdD: Long): Response {
